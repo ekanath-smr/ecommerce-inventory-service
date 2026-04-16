@@ -1,5 +1,6 @@
 package com.example.ecommerce_inventory_service.services;
 
+import com.example.ecommerce_inventory_service.clients.ProductServiceClient;
 import com.example.ecommerce_inventory_service.dtos.CreateInventoryRequestDto;
 import com.example.ecommerce_inventory_service.dtos.InventoryResponseDto;
 import com.example.ecommerce_inventory_service.dtos.StockOperationRequestDto;
@@ -14,18 +15,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// TODO: need to verify if the product exists by calling productService.
-
 @Service
 @RequiredArgsConstructor
 public class InventoryServiceImpl implements InventoryService {
 
     private final InventoryRepository inventoryRepository;
     private final InventoryTransactionService inventoryTransactionService;
+    private final ProductServiceClient productServiceClient;
 
     @Override
     @Transactional
     public InventoryResponseDto createInventory(CreateInventoryRequestDto request) {
+        productServiceClient.validateProduct(request.getProductId());
         if (inventoryRepository.existsByProductId(request.getProductId())) {
             throw new InventoryAlreadyExistsException("Inventory already exist", request.getProductId());
         }
@@ -82,7 +83,7 @@ public class InventoryServiceImpl implements InventoryService {
     public InventoryResponseDto releaseReservedStock(Long productId, StockOperationRequestDto request) {
         Inventory inventory = getInventoryEntity(productId);
         if (inventory.getReservedStock() < request.getQuantity()) {
-            throw new InvalidInventoryOperationException("Cannot release more reserved stock than currently reserved");
+            throw new InvalidInventoryOperationException("Cannot release more reserved stock than currently reserved", productId);
         }
         inventory.setReservedStock(inventory.getReservedStock() - request.getQuantity());
         inventoryTransactionService.recordTransaction(
@@ -99,7 +100,7 @@ public class InventoryServiceImpl implements InventoryService {
     public InventoryResponseDto confirmSale(Long productId, StockOperationRequestDto request) {
         Inventory inventory = getInventoryEntity(productId);
         if (inventory.getReservedStock() < request.getQuantity()) {
-            throw new InvalidInventoryOperationException("Cannot confirm sale for more than reserved stock");
+            throw new InvalidInventoryOperationException("Cannot confirm sale for more than reserved stock", productId);
         }
         inventory.setReservedStock(inventory.getReservedStock() - request.getQuantity());
         inventory.setSoldStock(inventory.getSoldStock() + request.getQuantity());
@@ -133,3 +134,15 @@ public class InventoryServiceImpl implements InventoryService {
                         - inventory.getSoldStock() - inventory.getDamagedStock();
     }
 }
+
+//ProductService = source of truth
+//InventoryService validates via API call
+//Handles failures with exceptions
+//Uses circuit breaker for resilience
+
+//“We initially used synchronous REST calls for product validation to ensure strong consistency.
+// For scalability, we can evolve to an event-driven model using Kafka for product sync, but we prioritized correctness
+// and simplicity in the first version.”
+
+//“I added Resilience4j circuit breaker and retry to prevent cascading failures between Inventory
+// and Product microservices”

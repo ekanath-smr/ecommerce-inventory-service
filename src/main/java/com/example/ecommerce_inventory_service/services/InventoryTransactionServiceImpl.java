@@ -9,8 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-// TODO: need to verify if the product exists by calling productService.
-
 @Service
 public class InventoryTransactionServiceImpl implements InventoryTransactionService {
 

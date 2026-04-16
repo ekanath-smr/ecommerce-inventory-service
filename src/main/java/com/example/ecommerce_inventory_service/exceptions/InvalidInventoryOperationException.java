@@ -4,9 +4,9 @@ import lombok.Getter;
 
 @Getter
 public class InvalidInventoryOperationException extends RuntimeException {
-    private final String message;
-    public InvalidInventoryOperationException(String message) {
+    private final Long productId;
+    public InvalidInventoryOperationException(String message, Long productId) {
         super(message);
-        this.message = message;
+        this.productId = productId;
     }
 }
