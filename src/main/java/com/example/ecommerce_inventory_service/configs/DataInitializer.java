@@ -23,6 +23,7 @@ public class DataInitializer implements CommandLineRunner {
         seedIfMissing("STOCK_RESERVED");
         seedIfMissing("STOCK_RELEASED");
         seedIfMissing("SALE_CONFIRMED");
+        seedIfMissing("UNDO_SALE");
         seedIfMissing("DAMAGED");
     }
 

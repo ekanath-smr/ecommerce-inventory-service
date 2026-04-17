@@ -58,6 +58,12 @@ public class InventoryController {
         return ResponseEntity.ok(inventoryService.confirmSale(productId, request));
     }
 
+    @PostMapping("/undo-sale/{productId}")
+    public ResponseEntity<InventoryResponseDto> undoSale(
+            @PathVariable Long productId, @Valid @RequestBody StockOperationRequestDto request) {
+        return ResponseEntity.ok(inventoryService.undoConfirmedSale(productId, request));
+    }
+
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/{productId}/in-stock")
     public ResponseEntity<Boolean> isInStock(

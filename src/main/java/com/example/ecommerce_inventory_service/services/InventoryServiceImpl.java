@@ -114,6 +114,26 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    @Transactional
+    public InventoryResponseDto undoConfirmedSale(Long productId, StockOperationRequestDto request) {
+        int quantity = request.getQuantity();
+        Inventory inventory = inventoryRepository.findByProductId(productId)
+                .orElseThrow(() -> new InventoryNotFoundException("Inventory not found", productId));
+        if (inventory.getSoldStock() < quantity) {
+            throw new InvalidInventoryOperationException("Cannot undo sale. Sold stock is less than requested rollback quantity", productId);
+        }
+        inventory.setSoldStock(inventory.getSoldStock() - quantity);
+        inventory.setTotalStock(inventory.getTotalStock() + quantity);
+        inventoryTransactionService.recordTransaction(
+                productId,
+                "UNDO_SALE",
+                quantity,
+                request.getReferenceId()
+        );
+        return InventoryMapper.toDto(inventoryRepository.save(inventory));
+    }
+
+    @Override
     public InventoryResponseDto getInventory(Long productId) {
         return InventoryMapper.toDto(getInventoryEntity(productId));
     }

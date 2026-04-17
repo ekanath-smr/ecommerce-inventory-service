@@ -9,6 +9,7 @@ public interface InventoryService {
     InventoryResponseDto reserveStock(Long productId, StockOperationRequestDto request);
     InventoryResponseDto releaseReservedStock(Long productId, StockOperationRequestDto request);
     InventoryResponseDto confirmSale(Long productId, StockOperationRequestDto request);
+    InventoryResponseDto undoConfirmedSale(Long productId, StockOperationRequestDto request);
     InventoryResponseDto getInventory(Long productId);
     boolean isInStock(Long productId, Integer quantity);
 }
