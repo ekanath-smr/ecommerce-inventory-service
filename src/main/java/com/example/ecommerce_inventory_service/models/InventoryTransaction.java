@@ -1,12 +1,12 @@
 package com.example.ecommerce_inventory_service.models;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity(name = "inventory_transactions")
 public class InventoryTransaction extends BaseModel {
     @Column(nullable = false)

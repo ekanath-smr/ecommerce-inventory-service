@@ -1,6 +1,7 @@
 package com.example.ecommerce_inventory_service.services;
 import com.example.ecommerce_inventory_service.dtos.CreateInventoryRequestDto;
 import com.example.ecommerce_inventory_service.dtos.InventoryResponseDto;
+import com.example.ecommerce_inventory_service.dtos.StockAvailabilityResponseDto;
 import com.example.ecommerce_inventory_service.dtos.StockOperationRequestDto;
 
 public interface InventoryService {
@@ -12,4 +13,5 @@ public interface InventoryService {
     InventoryResponseDto undoConfirmedSale(Long productId, StockOperationRequestDto request);
     InventoryResponseDto getInventory(Long productId);
     boolean isInStock(Long productId, Integer quantity);
+    StockAvailabilityResponseDto getAvailableStock(Long productId);
 }

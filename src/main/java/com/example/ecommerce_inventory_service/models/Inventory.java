@@ -1,13 +1,13 @@
 package com.example.ecommerce_inventory_service.models;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity(name = "inventories")
 @Table(
         name = "inventories",
@@ -27,8 +27,9 @@ public class Inventory extends BaseModel {
     @Column(nullable = false)
     private Integer damagedStock = 0;
     // “I use optimistic locking with JPA’s @Version field.
-    //Concurrent updates include the version in the WHERE clause.
-    //If another transaction modifies the row first, the second update fails with OptimisticLockException, preventing lost updates and overselling.”
+    // Concurrent updates include the version in the WHERE clause.
+    // If another transaction modifies the row first, the second update fails with OptimisticLockException,
+    // preventing lost updates and overselling.”
     @Version
     private Long version;
 }

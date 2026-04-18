@@ -23,11 +23,12 @@ public class InventoryTransactionServiceImpl implements InventoryTransactionServ
     @Override
     public void recordTransaction(Long productId, String actionName, Integer quantity, String referenceId) {
         InventoryAction action = inventoryActionService.getByName(actionName);
-        InventoryTransaction transaction = new InventoryTransaction();
-        transaction.setProductId(productId);
-        transaction.setAction(action);
-        transaction.setQuantity(quantity);
-        transaction.setReferenceId(referenceId);
+        InventoryTransaction transaction = InventoryTransaction.builder()
+                .productId(productId)
+                .action(action)
+                .quantity(quantity)
+                .referenceId(referenceId)
+                .build();
         inventoryTransactionRepository.save(transaction);
     }
 

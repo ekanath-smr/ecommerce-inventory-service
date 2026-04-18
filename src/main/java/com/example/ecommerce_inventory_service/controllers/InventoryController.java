@@ -2,6 +2,7 @@ package com.example.ecommerce_inventory_service.controllers;
 
 import com.example.ecommerce_inventory_service.dtos.CreateInventoryRequestDto;
 import com.example.ecommerce_inventory_service.dtos.InventoryResponseDto;
+import com.example.ecommerce_inventory_service.dtos.StockAvailabilityResponseDto;
 import com.example.ecommerce_inventory_service.dtos.StockOperationRequestDto;
 import com.example.ecommerce_inventory_service.services.InventoryService;
 import jakarta.validation.Valid;
@@ -58,7 +59,8 @@ public class InventoryController {
         return ResponseEntity.ok(inventoryService.confirmSale(productId, request));
     }
 
-    @PostMapping("/undo-sale/{productId}")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @PostMapping("/{productId}/undo-sale")
     public ResponseEntity<InventoryResponseDto> undoSale(
             @PathVariable Long productId, @Valid @RequestBody StockOperationRequestDto request) {
         return ResponseEntity.ok(inventoryService.undoConfirmedSale(productId, request));
@@ -69,6 +71,12 @@ public class InventoryController {
     public ResponseEntity<Boolean> isInStock(
             @PathVariable Long productId, @RequestParam Integer quantity) {
         return ResponseEntity.ok(inventoryService.isInStock(productId, quantity));
+    }
+
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @GetMapping("/{productId}/get-stock")
+    public ResponseEntity<StockAvailabilityResponseDto> getAvailableStock(@PathVariable Long productId) {
+        return ResponseEntity.ok(inventoryService.getAvailableStock(productId));
     }
 }
 

@@ -3,6 +3,7 @@ package com.example.ecommerce_inventory_service.services;
 import com.example.ecommerce_inventory_service.clients.ProductServiceClient;
 import com.example.ecommerce_inventory_service.dtos.CreateInventoryRequestDto;
 import com.example.ecommerce_inventory_service.dtos.InventoryResponseDto;
+import com.example.ecommerce_inventory_service.dtos.StockAvailabilityResponseDto;
 import com.example.ecommerce_inventory_service.dtos.StockOperationRequestDto;
 import com.example.ecommerce_inventory_service.exceptions.InsufficientStockException;
 import com.example.ecommerce_inventory_service.exceptions.InvalidInventoryOperationException;
@@ -10,6 +11,7 @@ import com.example.ecommerce_inventory_service.exceptions.InventoryAlreadyExists
 import com.example.ecommerce_inventory_service.exceptions.InventoryNotFoundException;
 import com.example.ecommerce_inventory_service.mappers.InventoryMapper;
 import com.example.ecommerce_inventory_service.models.Inventory;
+import com.example.ecommerce_inventory_service.models.InventoryAction;
 import com.example.ecommerce_inventory_service.repositories.InventoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,12 +32,13 @@ public class InventoryServiceImpl implements InventoryService {
         if (inventoryRepository.existsByProductId(request.getProductId())) {
             throw new InventoryAlreadyExistsException("Inventory already exist", request.getProductId());
         }
-        Inventory inventory = new Inventory();
-        inventory.setProductId(request.getProductId());
-        inventory.setTotalStock(request.getInitialStock());
-        inventory.setReservedStock(0);
-        inventory.setSoldStock(0);
-        inventory.setDamagedStock(0);
+        Inventory inventory = Inventory.builder()
+                .productId(request.getProductId())
+                .totalStock(request.getInitialStock())
+                .reservedStock(0)
+                .soldStock(0)
+                .damagedStock(0)
+                .build();
         Inventory savedInventory = inventoryRepository.save(inventory);
         inventoryTransactionService.recordTransaction(
                 savedInventory.getProductId(),
@@ -123,7 +126,7 @@ public class InventoryServiceImpl implements InventoryService {
             throw new InvalidInventoryOperationException("Cannot undo sale. Sold stock is less than requested rollback quantity", productId);
         }
         inventory.setSoldStock(inventory.getSoldStock() - quantity);
-        inventory.setTotalStock(inventory.getTotalStock() + quantity);
+//        inventory.setReservedStock(inventory.getReservedStock() + quantity);
         inventoryTransactionService.recordTransaction(
                 productId,
                 "UNDO_SALE",
@@ -142,6 +145,14 @@ public class InventoryServiceImpl implements InventoryService {
     public boolean isInStock(Long productId, Integer quantity) {
         Inventory inventory = getInventoryEntity(productId);
         return calculateAvailableStock(inventory) >= quantity;
+    }
+
+    @Override
+    public StockAvailabilityResponseDto getAvailableStock(Long productId) {
+        return StockAvailabilityResponseDto.builder()
+                .productId(productId)
+                .availableStock(calculateAvailableStock(getInventoryEntity(productId)))
+                .build();
     }
 
     private Inventory getInventoryEntity(Long productId) {
