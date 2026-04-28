@@ -36,8 +36,10 @@ public class JwtService {
     @SuppressWarnings("unchecked")
     public List<String> extractRoles(String token) {
         Object roles = extractAllClaims(token).get("roles");
-        if (roles instanceof List<?>) {
-            return (List<String>) roles;
+        if (roles instanceof List<?> list) {
+            return list.stream()
+                    .map(Object::toString)
+                    .toList();
         }
         return Collections.emptyList();
     }
@@ -51,9 +53,13 @@ public class JwtService {
         }
     }
 
+    public String extractTokenType(String token) {
+        Object tokenType = extractAllClaims(token).get("tokenType");
+        return tokenType != null ? tokenType.toString() : "";
+    }
+
     private Claims extractAllClaims(String token) {
-        return Jwts
-                .parserBuilder()
+        return Jwts.parserBuilder()
                 .setSigningKey(secretKey)
                 .build()
                 .parseClaimsJws(token)

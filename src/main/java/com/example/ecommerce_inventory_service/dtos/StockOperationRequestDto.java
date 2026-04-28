@@ -1,9 +1,12 @@
 package com.example.ecommerce_inventory_service.dtos;
 
 import jakarta.validation.constraints.Positive;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class StockOperationRequestDto {
     @Positive
     private Integer quantity;
