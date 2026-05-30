@@ -1,115 +1,259 @@
 # 🧾 Inventory Service – E-Commerce Microservice
 
 ## 📌 Overview
-The **Inventory Service** is a core microservice in a distributed e-commerce system responsible for managing product stock, ensuring consistency during checkout, and maintaining an audit trail of all inventory operations.
 
-It is designed using **domain-driven principles**, **strong consistency guarantees**, and **fault-tolerant communication patterns**.
+The **Inventory Service** is a core microservice in a distributed e-commerce platform responsible for managing product stock, ensuring consistency during checkout, and maintaining an audit trail of all inventory operations.
+
+The service follows **domain-driven design principles**, implements **reservation-based stock management**, and supports **fault-tolerant communication** within a distributed microservices ecosystem.
+
+It is fully integrated with:
+
+* Service Discovery (Eureka)
+* API Gateway
+* Client-Side Load Balancing
+* OpenFeign
+* Resilience4j
+* JWT Authentication & RBAC
 
 ---
 
 ## 🔗 Links
-- 📂 GitHub Repository: https://github.com/ekanath-smr/ecommerce-inventory-service
-- 📘 Swagger UI: http://localhost:8070/swagger-ui/index.html
-- 📄 OpenAPI Docs: http://localhost:8070/v3/api-docs
+
+* 📂 GitHub Repository: https://github.com/ekanath-smr/ecommerce-inventory-service
+* 📘 Swagger UI: http://localhost:8070/swagger-ui/index.html
+* 📄 OpenAPI Docs: http://localhost:8070/v3/api-docs
 
 ---
 
-## 🚀 Key Features
+# 🚀 Features
 
-### 🏪 Inventory Management
-- Create inventory for valid products
-- Add stock to existing inventory
-- Fetch inventory details by product
+## 🏪 Inventory Management
 
-### ⚙️ Domain-Driven Stock Operations
-Inventory is managed using **explicit business commands** instead of generic CRUD:
+* Create inventory for valid products
+* Add stock to existing inventory
+* Fetch inventory details by product
+* Real-time stock availability checks
 
-- Reserve Stock → Temporarily lock stock during checkout
-- Release Stock → Unlock reserved stock on failure/cancellation
-- Confirm Sale → Move stock from reserved → sold
-- Undo Sale → Compensation (sold → reserved)
+---
 
-This ensures **strict control over state transitions** and prevents invalid updates.
+## ⚙️ Domain-Driven Stock Operations
+
+Inventory is managed through explicit business commands instead of generic CRUD operations.
+
+### Supported Operations
+
+* Reserve Stock → Temporarily lock stock during checkout
+* Release Stock → Unlock reserved stock on cancellation/failure
+* Confirm Sale → Move stock from reserved → sold
+* Undo Sale → Compensation operation (sold → reserved)
+
+This approach ensures:
+
+* Strict control over stock transitions
+* Prevention of invalid inventory states
+* Better auditability
+* Easier implementation of distributed transactions
 
 ---
 
 ## 🔐 Security & Access Control
-- JWT-based authentication
-- Role-Based Access Control (RBAC)
 
-| Role  | Permissions |
-|------|------------|
-| ADMIN | Create inventory, add stock |
-| USER  | Reserve, release, confirm sale |
+### Authentication
+
+* JWT-based Authentication
+
+### Authorization
+
+Role-Based Access Control (RBAC)
+
+| Role  | Permissions                                |
+| ----- | ------------------------------------------ |
+| ADMIN | Create Inventory, Add Stock                |
+| USER  | Reserve Stock, Release Stock, Confirm Sale |
 
 ---
 
 ## 🔗 Inter-Service Communication
-- Uses **OpenFeign** for communication with Product Service
-- Validates product existence before creating inventory
 
-**Design Principle:**
-- Product Service → Source of Truth
-- Inventory Service → Dependent validator
+### Product Service Integration
+
+The Inventory Service communicates with Product Service using OpenFeign.
+
+Before inventory creation:
+
+1. Product existence is validated
+2. Inventory is created only for valid products
+
+### Design Principle
+
+* Product Service → Source of Truth
+* Inventory Service → Dependent Validator
 
 ---
 
 ## ⚡ Fault Tolerance & Resilience
-Integrated **Resilience4j**:
-- Circuit Breaker → Prevents cascading failures
-- Retry → Handles transient failures
+
+Integrated with Resilience4j.
+
+### Circuit Breaker
+
+Prevents cascading failures when Product Service becomes unavailable.
+
+### Retry
+
+Automatically retries transient failures before failing requests.
+
+Benefits:
+
+* Improved reliability
+* Better user experience
+* Reduced service outages
+
+---
+
+## 🌐 Service Discovery
+
+Integrated with Eureka Service Discovery.
+
+### Benefits
+
+* Automatic service registration
+* Dynamic service lookup
+* No hardcoded service URLs
+* Better scalability
+
+Inventory Service registers itself with Eureka at startup and can be discovered by other services.
+
+---
+
+## 🚪 API Gateway Integration
+
+All external requests can be routed through the API Gateway.
+
+Benefits:
+
+* Single entry point for clients
+* Centralized routing
+* Security enforcement
+* Future rate limiting support
+* Request filtering and monitoring
+
+Example:
+
+```http
+http://localhost:8080/inventory/**
+```
+
+instead of directly calling:
+
+```http
+http://localhost:8070/**
+```
+
+---
+
+## ⚖️ Client-Side Load Balancing
+
+The service supports client-side load balancing through Spring Cloud LoadBalancer.
+
+### Example Scenario
+
+Multiple Product Service instances:
+
+```text
+Product-Service-1 : 8081
+Product-Service-2 : 8082
+```
+
+Feign Client automatically distributes requests across available instances.
+
+Benefits:
+
+* Horizontal scalability
+* High availability
+* Better fault tolerance
 
 ---
 
 ## 📊 Inventory Transactions (Audit Trail)
-All operations are recorded:
 
-- STOCK_ADDED
-- STOCK_RESERVED
-- STOCK_RELEASED
-- SALE_CONFIRMED
-- UNDO_SALE
+Every inventory operation is recorded.
 
-Enables debugging, reconciliation, and observability.
+Supported transaction types:
+
+* STOCK_ADDED
+* STOCK_RESERVED
+* STOCK_RELEASED
+* SALE_CONFIRMED
+* UNDO_SALE
+
+Benefits:
+
+* Auditing
+* Debugging
+* Reconciliation
+* Operational observability
 
 ---
 
 ## 🧠 Consistency & Distributed Design
 
 ### Strong Consistency
-- Product validation via synchronous API call
 
-### Distributed Consistency (Saga Pattern)
-Checkout flow:
+Inventory creation validates products synchronously via Product Service.
 
-1. Reserve stock
-2. Confirm sale
-3. On failure:
-   - Undo confirmed sale
-   - Release reserved stock
+### Distributed Consistency
 
-*Note: Currently synchronous compensation. Future → Kafka-based async Saga.*
+Checkout flow follows a Saga-style compensation pattern.
 
----
+### Checkout Workflow
 
-## 🏗️ Tech Stack
-- Java 21
-- Spring Boot
-- Spring Security (JWT + RBAC)
-- Spring Data JPA (Hibernate)
-- MySQL / H2
-- OpenFeign
-- Resilience4j
-- Lombok
-- Maven
-- Swagger / OpenAPI
+1. Reserve Stock
+2. Confirm Sale
+
+If downstream failure occurs:
+
+3. Undo Sale
+4. Release Reserved Stock
+
+Current implementation:
+
+* Synchronous compensation
+
+Future enhancement:
+
+* Kafka-based Event-Driven Saga
 
 ---
 
-## 📂 Project Structure
+# 🏗️ Tech Stack
 
-```
+* Java 21
+* Spring Boot
+* Spring Security
+* JWT Authentication
+* Spring Data JPA
+* Hibernate
+* MySQL
+* H2 Database
+* OpenFeign
+* Eureka Discovery Client
+* Spring Cloud LoadBalancer
+* API Gateway Integration
+* Resilience4j
+* Lombok
+* Maven
+* Swagger/OpenAPI
+* JUnit 5
+* Mockito
+
+---
+
+# 📂 Project Structure
+
+```text
 src/main/java/com/example/ecommerce_inventory_service
+
 ├── controllers
 ├── services
 ├── clients
@@ -119,116 +263,227 @@ src/main/java/com/example/ecommerce_inventory_service
 ├── mappers
 ├── security
 ├── advices
-└── configs
+├── configs
+└── exceptions
 
 src/test/java
+
 └── services
 ```
 
 ---
 
-## 🔄 API Endpoints
+# 🔄 API Endpoints
 
-### Inventory APIs
-POST   /inventory  
-GET    /inventory/{productId}
+## Inventory APIs
 
-### Stock Operations
-POST   /inventory/{productId}/add-stock  
-POST   /inventory/{productId}/reserve  
-POST   /inventory/{productId}/release  
-POST   /inventory/{productId}/confirm-sale  
-POST   /inventory/{productId}/undo-sale
+### Create Inventory
 
-### Stock Queries
-GET    /inventory/{productId}/in-stock  
-GET    /inventory/{productId}/available-stock
-
----
-
-## ⚙️ Configuration
-
-### Database
-```
-spring.datasource.url=jdbc:mysql://localhost:3306/inventoryService
-spring.jpa.hibernate.ddl-auto=update
+```http
+POST /inventory
 ```
 
-### Product Service (Feign)
-```
-product.service.url=http://localhost:8080
-```
+### Get Inventory
 
-### Resilience4j
-```
-resilience4j.circuitbreaker.instances.productService.failureRateThreshold=50
-resilience4j.retry.instances.productService.maxAttempts=3
+```http
+GET /inventory/{productId}
 ```
 
 ---
 
-## 🛡️ Error Handling
-Centralized using `@RestControllerAdvice`.
+## Stock Operations
+
+### Add Stock
+
+```http
+POST /inventory/{productId}/add-stock
+```
+
+### Reserve Stock
+
+```http
+POST /inventory/{productId}/reserve
+```
+
+### Release Reserved Stock
+
+```http
+POST /inventory/{productId}/release
+```
+
+### Confirm Sale
+
+```http
+POST /inventory/{productId}/confirm-sale
+```
+
+### Undo Sale
+
+```http
+POST /inventory/{productId}/undo-sale
+```
+
+---
+
+## Stock Queries
+
+### Check Stock Availability
+
+```http
+GET /inventory/{productId}/in-stock
+```
+
+### Get Available Stock
+
+```http
+GET /inventory/{productId}/available-stock
+```
+
+---
+
+# 🛡️ Error Handling
+
+Centralized exception handling using:
+
+```java
+@RestControllerAdvice
+```
 
 Handles:
-- InventoryNotFoundException
-- InsufficientStockException
-- ProductNotFoundException
-- ProductServiceUnavailableException
-- InvalidInventoryOperationException
+
+* InventoryNotFoundException
+* InventoryAlreadyExistsException
+* InsufficientStockException
+* InvalidInventoryOperationException
+* ProductNotFoundException
+* ProductServiceUnavailableException
+* Validation Exceptions
+* Runtime Exceptions
 
 ---
 
-## 📈 Logging Strategy
+# 🧪 Testing
 
-| Level | Usage |
-|------|------|
-| INFO | Business operations |
-| WARN | Invalid operations |
-| ERROR | Failures |
+Unit tests implemented using:
 
----
+* JUnit 5
+* Mockito
 
-## 🔄 Example Checkout Flow
+Coverage includes:
 
-1. Reserve stock
-2. Confirm sale
-3. On failure:
-   - Undo sale
-   - Release stock
+* Inventory Creation
+* Stock Addition
+* Stock Reservation
+* Sale Confirmation
+* Sale Rollback
+* Inventory Queries
+* Failure Scenarios
 
----
+Run tests:
 
-## 🚧 Future Enhancements
-- Kafka-based event-driven architecture
-- Distributed tracing (Zipkin)
-- Centralized logging (ELK)
-- Service discovery (Eureka)
-- Idempotency support
+```bash
+mvn test
+```
 
 ---
 
-## 💡 Design Highlights
-- Domain-driven APIs (command-based design)
-- Saga-based compensation logic
-- Fault-tolerant communication
-- Full audit trail for inventory
+# 📈 Logging Strategy
+
+Implemented structured logging using SLF4J.
+
+| Level | Usage                 |
+| ----- | --------------------- |
+| INFO  | Business Operations   |
+| DEBUG | Internal Processing   |
+| WARN  | Invalid Requests      |
+| ERROR | Failures & Exceptions |
 
 ---
 
-## 🏆 Resume Highlights
-- Designed Inventory microservice using Spring Boot & MySQL
-- Implemented JWT + RBAC security
-- Built Feign-based inter-service communication
-- Integrated Resilience4j (Circuit Breaker + Retry)
-- Implemented Saga-based consistency model
-- Added transaction logging for auditability
+# 🔄 Example Checkout Flow
+
+```text
+Order Created
+      |
+      v
+
+Reserve Stock
+      |
+      v
+
+Confirm Sale
+      |
+      v
+
+Order Success
+```
+
+Failure Path:
+
+```text
+Reserve Stock
+      |
+      v
+
+Confirm Sale
+      |
+      X Failure
+
+Undo Sale
+      |
+      v
+
+Release Stock
+```
 
 ---
 
-## 🧑‍💻 Author
-**Ekanath S M R**  
-Backend Engineer | Java + Spring Boot Developer
+# 🚧 Future Enhancements
 
-GitHub:  
+* Kafka Event-Driven Architecture
+* Distributed Saga Orchestration
+* Distributed Tracing (Zipkin)
+* Centralized Logging (ELK)
+* Redis Caching
+* Prometheus + Grafana Monitoring
+* Idempotent Inventory Operations
+
+---
+
+# 💡 Design Highlights
+
+* Domain-Driven Inventory APIs
+* Reservation-Based Stock Management
+* Strong Consistency Guarantees
+* Saga-Based Compensation Flow
+* Feign-Based Service Communication
+* Eureka Service Discovery
+* API Gateway Routing
+* Client-Side Load Balancing
+* Resilience4j Fault Tolerance
+* Full Inventory Audit Trail
+
+---
+
+# 🏆 Resume Highlights
+
+* Designed and developed an Inventory Microservice using Spring Boot and MySQL
+* Implemented reservation-based stock management to prevent overselling
+* Integrated OpenFeign for inter-service communication
+* Implemented Eureka Service Discovery and API Gateway architecture
+* Enabled client-side load balancing using Spring Cloud LoadBalancer
+* Integrated Resilience4j Circuit Breaker and Retry patterns
+* Built JWT-based Authentication and Role-Based Authorization
+* Implemented Saga-style compensation flow for distributed consistency
+* Added transaction logging and audit trail for inventory operations
+
+---
+
+# 🧑‍💻 Author
+
+**Ekanath S M R**
+
+Backend Engineer | Java | Spring Boot | Microservices
+
+GitHub:
 https://github.com/ekanath-smr
